@@ -22,11 +22,17 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .env.production.local
 .env.local
 
+# local admission piece tracking state
+.admission-pieces.json
+
+# per-user Apps Script project created by `clasp create`
+.clasp.json
+.clasp.*.bak
+
 # caches
 .eslintcache
 .cache
 *.tsbuildinfo
-
 # IntelliJ based IDEs
 .idea
 

@@ -1,0 +1,47 @@
+name: Authenticate Cidercade
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Verification SMS, e.g. "Your Cidercade verification code is: 123456"'
+        required: true
+        type: string
+
+concurrency: cidercade
+
+jobs:
+  authenticate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --production
+
+      - name: Exchange verification SMS for JWT
+        env:
+          PHONE_NUMBER: ${{ secrets.PHONE_NUMBER }}
+          VERIFICATION_MESSAGE: ${{ inputs.message }}
+        run: |
+          jwt="$(bun run otp)"
+          echo "::add-mask::$jwt"
+          echo "TOKEN=$jwt" >> "$GITHUB_ENV"
+
+      - name: Save JWT to TOKEN secret
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: printf '%s' "$TOKEN" | gh secret set TOKEN --repo "$GITHUB_REPOSITORY"
+
+      - name: Run daily tasks
+        run: bun start
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PHONE_NUMBER: ${{ secrets.PHONE_NUMBER }}
+          GH_PAT: ${{ secrets.GH_PAT }}
